@@ -1,0 +1,176 @@
+C51 COMPILER V9.54   OLED12864PIC                                                          04/13/2022 19:06:00 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE OLED12864PIC
+OBJECT MODULE PLACED IN .\Objects\OLED12864pic.obj
+COMPILER INVOKED BY: D:\Program Files (x86)\keil5\C51\BIN\C51.EXE c_and h_\OLED12864pic.c LARGE OPTIMIZE(8,SPEED) BROWSE
+                    - INCDIR(.\c_and h_) DEBUG OBJECTEXTEND PRINT(.\Listings\OLED12864pic.lst) OBJECT(.\Objects\OLED12864pic.obj)
+
+line level    source
+
+   1          #include "all.h"
+   2          u8 xdata OLED_Write_pic_Buffer[8][128];//二维数组   8页   每页128个字节
+   3          
+   4          void OLED_Write_Reg(u8 IIC_Command)
+   5          {
+   6   1              IIC_Start();
+   7   1              IIC_Write_Byte(0x78);// 设备识别码
+   8   1              IIC_Read_Ack();//检测来自从机的应答
+   9   1              IIC_Write_Byte(0x00);// 控制字节   下一位数据为命令
+  10   1              IIC_Read_Ack();//检测来自从机的应答
+  11   1              IIC_Write_Byte(IIC_Command);// 写命令
+  12   1              IIC_Read_Ack();//检测来自从机的应答
+  13   1              IIC_Stop();
+  14   1      }
+  15          
+  16          void OLED_Write_pic_Data(u8 PAGE )  //将数组的1页（182个字节）写入oled
+  17          {
+  18   1              u8 i;
+  19   1              OLED_Write_Reg(0xb0+PAGE);
+  20   1              OLED_Write_Reg(0x00);        //列低字节起始地址
+  21   1              OLED_Write_Reg(0x10);        //列高字节起始地址
+  22   1      
+  23   1              IIC_Start();
+  24   1              IIC_Write_Byte(0x78);// 设备识别码
+  25   1              IIC_Read_Ack();//检测来自从机的应答
+  26   1              IIC_Write_Byte(0x40);// 控制字节   下一位数据为数据
+  27   1              IIC_Read_Ack();//检测来自从机的应答
+  28   1              for(i=0;i<128;i++)
+  29   1              {
+  30   2                      IIC_Write_Byte(OLED_Write_pic_Buffer[PAGE][i]);// 写数据
+  31   2                      IIC_Read_Ack();//检测来自从机的应答
+  32   2              }               
+  33   1              IIC_Stop();
+  34   1      }
+  35          void OLED_XRAM_Delete()   //单片机的数据缓存清空
+  36          {
+  37   1              u16 i;
+  38   1              u8 *P;
+  39   1              P=&OLED_Write_pic_Buffer[0][0];
+  40   1              for(i=0;i<1024;i++)
+  41   1              {
+  42   2                      (* P)=0;
+  43   2                      P++;
+  44   2              }
+  45   1      }
+  46          void OLED_Delete()         //OLED清屏
+  47          {
+  48   1              u8 i,k;
+  49   1              for(i=0;i<8;i++)
+  50   1              {                               
+  51   2                              OLED_Write_Reg(0xb0+i);      //起始页
+  52   2                              OLED_Write_Reg(0x00);        //列低字节起始地址
+  53   2      //                      OLED_Write_Reg(0x1b);        //列高字节起始地址
+  54   2      
+C51 COMPILER V9.54   OLED12864PIC                                                          04/13/2022 19:06:00 PAGE 2   
+
+  55   2                              IIC_Start();
+  56   2                              IIC_Write_Byte(0x78);// 设备识别码
+  57   2                              IIC_Read_Ack();//检测来自从机的应答
+  58   2                              IIC_Write_Byte(0x40);// 控制字节   下一位数据为数据
+  59   2                              IIC_Read_Ack();//检测来自从机的应答
+  60   2                              for(k=0;k<128;k++)
+  61   2                              {
+  62   3                                      IIC_Write_Byte(0);// 写数据
+  63   3                                      IIC_Read_Ack();//检测来自从机的应答
+  64   3                              }               
+  65   2                              IIC_Stop();
+  66   2                      }
+  67   1      }
+  68          
+  69          void OLED_Newpic_Show_Ser()        //将全部缓存数据发送到oled
+  70          {
+  71   1              static xdata u8 count=0;
+  72   1              static xdata u8 PAGE=0;       //静态变量会记住改变以后的值
+  73   1              switch(count)
+  74   1              {
+  75   2                      case 10:OLED_Write_pic_Data(PAGE);break;
+  76   2                      case 20:OLED_Write_pic_Data(PAGE);break;
+  77   2                      case 30:OLED_Write_pic_Data(PAGE);break;
+  78   2                      case 40:OLED_Write_pic_Data(PAGE);break;
+  79   2                      case 50:OLED_Write_pic_Data(PAGE);break;
+  80   2                      case 60:OLED_Write_pic_Data(PAGE);break;
+  81   2                      case 70:OLED_Write_pic_Data(PAGE);break;
+  82   2                      case 80:
+  83   2                      {
+  84   3                              OLED_Write_pic_Data(PAGE);
+  85   3                              PAGE++;
+  86   3                              PAGE=PAGE%8;
+  87   3                              count=0;
+  88   3                      }
+  89   2                      break;
+  90   2              }
+  91   1              count++;
+  92   1      }
+  93          void OLED_Show_Picture_Ser(u8 PAGE,u8 dat1)//显示图片    将图片数据放入缓存数组中
+  94          {
+  95   1              u8 i;
+  96   1              for(i=0;i<128;i++)      //
+  97   1              {
+  98   2                      OLED_Write_pic_Buffer[PAGE][i]=Picture[dat1][i];                
+  99   2              }
+ 100   1      
+ 101   1      }
+ 102          void OLED_Init()
+ 103          {
+ 104   1              
+ 105   1              OLED_XRAM_Delete();//缓存数组清零  跟oled没有直接关系  这些都放在单片机的外部RAM中   
+ 106   1      
+ 107   1              OLED_Show_Picture_Ser(0,0);
+ 108   1              OLED_Show_Picture_Ser(1,1);
+ 109   1              OLED_Show_Picture_Ser(2,2);
+ 110   1              OLED_Show_Picture_Ser(3,3);
+ 111   1              OLED_Show_Picture_Ser(4,4);
+ 112   1              OLED_Show_Picture_Ser(5,5);
+ 113   1              OLED_Show_Picture_Ser(6,6);
+ 114   1              OLED_Show_Picture_Ser(7,7);
+ 115   1                      
+ 116   1              OLED_Write_Reg(0x81);//设置对比度
+C51 COMPILER V9.54   OLED12864PIC                                                          04/13/2022 19:06:00 PAGE 3   
+
+ 117   1              OLED_Write_Reg(0xff);//全亮
+ 118   1              
+ 119   1              OLED_Write_Reg(0xa4);//上电自动显示RAM中的图像
+ 120   1              OLED_Write_Reg(0xa6);//黑底白字 
+ 121   1              OLED_Write_Reg(0xaf);//显示开
+ 122   1              OLED_Write_Reg(0x40);//不进行卷屏   起始行
+ 123   1              OLED_Write_Reg(0xa1);//左右镜像
+ 124   1              OLED_Write_Reg(0xc8);//上下镜像 
+ 125   1              
+ 126   1              OLED_Write_Reg(0xa8);//设置重复率  （没看懂） 
+ 127   1              OLED_Write_Reg(0x3f);
+ 128   1      
+ 129   1              OLED_Write_Reg(0xd3);//不进行滚屏   不偏移
+ 130   1              OLED_Write_Reg(0x00);
+ 131   1              
+ 132   1              OLED_Write_Reg(0xd5);//  下面都与刷新频率有关
+ 133   1              OLED_Write_Reg(0x00); 
+ 134   1              
+ 135   1              OLED_Write_Reg(0xd9);
+ 136   1              OLED_Write_Reg(0x22);
+ 137   1              
+ 138   1              OLED_Write_Reg(0xdb);
+ 139   1              OLED_Write_Reg(0x20);
+ 140   1              OLED_Write_Reg(0x8d);
+ 141   1              OLED_Write_Reg(0x14);//与刷新频率有关
+ 142   1      
+ 143   1              OLED_Write_Reg(0x20);//设置显示方式  
+ 144   1              OLED_Write_Reg(0x02);//页寻址
+ 145   1              
+ 146   1              OLED_Delete();     //擦除
+ 147   1              
+ 148   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    539    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   1026       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

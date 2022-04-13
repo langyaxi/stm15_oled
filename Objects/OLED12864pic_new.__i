@@ -1,0 +1,1 @@
+"c_and h_\OLED12864pic_new.c" LARGE OPTIMIZE (8,SPEED) BROWSE INCDIR(.\c_and h_) DEBUG OBJECTEXTEND PRINT(.\Listings\OLED12864pic_new.lst) OBJECT(.\Objects\OLED12864pic_new.obj)

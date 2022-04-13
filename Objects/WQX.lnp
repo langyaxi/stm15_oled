@@ -1,0 +1,6 @@
+".\Objects\IIC_Drive.obj",
+".\Objects\main.obj",
+".\Objects\ASCII.obj",
+".\Objects\OLED12864pic.obj" 
+TO ".\Objects\WQX" 
+PRINT(".\Listings\WQX.m51") RAMSIZE(256) 
